@@ -1,15 +1,22 @@
 #encoding:utf-8
 from __future__ import absolute_import
+import sys 
+import os 
 import jieba
 import time
 from scipy import spatial
 import numpy as np
 
-from Utils.load_data import *
+# sys.path.insert('../')
+
+
+from utils.load_data import *
+
 
 file_voc='./data/voc.txt'
 file_idf='./data/idf.txt'
 file_userdict='./data/medfw.txt'
+
 
 class SSIM(object):
 
@@ -18,7 +25,7 @@ class SSIM(object):
         self.voc=load_voc(file_voc)
         print("Loading  word2vec vector cost %.3f seconds...\n" % (time.time() - t1))
         t1 = time.time()
-        self.idf=load_idf(file_idf)
+        self.idf = load_idf(file_idf)
         print("Loading  idf data cost %.3f seconds...\n" % (time.time() - t1))
         jieba.load_userdict(file_userdict)
 
@@ -37,6 +44,29 @@ class SSIM(object):
         return sim
 
     def M_idf(self,s1, s2):
+        v1, v2 = [], []
+        s1_list = jieba.lcut(s1)
+        s2_list = jieba.lcut(s2)
+
+        for s in s1_list:
+            idf_v = self.idf.get(s, 1)
+            if s in self.voc:
+                v1.append(1.0 * idf_v * self.voc[s])
+
+        for s in s2_list:
+            idf_v = self.idf.get(s, 1)
+            if s in self.voc:
+                v2.append(1.0 * idf_v * self.voc[s])
+
+        v1 = np.array(v1).sum(axis=0)
+        v2 = np.array(v2).sum(axis=0)
+
+        sim = 1 - spatial.distance.cosine(v1, v2)
+
+        return sim
+    
+
+    def M_iwf(self,s1, s2):
         v1, v2 = [], []
         s1_list = jieba.lcut(s1)
         s2_list = jieba.lcut(s2)
